@@ -13,7 +13,7 @@ int main() {
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = INADDR_ANY;
-    // sin.sin_port = htons(10000+121);
+    sin.sin_port = htons(10000+121);
     if(bind(passiveSock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
         cerr << "bind() failed: " << strerror(errno) << endl;
         return 1;
