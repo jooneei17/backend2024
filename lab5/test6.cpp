@@ -14,6 +14,8 @@ using namespace std;
 using namespace mju;
 
 int main() {
+
+    // protobuf 만들어서 시리얼라이즈
     Person *p = new Person;
     p -> set_name("JY YI");
     p -> set_id(12345678);
@@ -28,9 +30,8 @@ int main() {
 
     const string s = p -> SerializeAsString();
     cout << "Length: " << s.length() << endl;
-    cout << s << endl;
 
-
+    // UDP 소켓 통신
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock < 0) return 1; 
 
@@ -45,25 +46,23 @@ int main() {
     int numBytes = sendto(sock, s.c_str(), s.length(), 
         0, (struct sockaddr *) &sin, sizeof(sin));
 
-    cout << "Sent: " << numBytes << endl;
-
     char buf2[65536];
     memset(&sin, 0, sizeof(sin));
     socklen_t sin_size = sizeof(sin);
     numBytes = recvfrom(sock, buf2, sizeof(buf2), 0, (struct sockaddr *) &sin, &sin_size); 
-    cout << "Recevied: " << numBytes << endl;
+    cout << "Received: " << numBytes << endl;
     cout << "From " << inet_ntoa(sin.sin_addr) << endl;
-    cout << buf2 << endl;
 
+    string receive(buf2, numBytes);
 
     Person *p2 = new Person;
-    p2 -> ParseFromString(buf2);
+    p2 -> ParseFromString(receive);
     cout << "Name: " << p2 -> name() << endl;
     cout << "ID: " << p2 -> id() << endl;
     for (int i = 0; i < p2 -> phones_size(); ++i) {
         cout << "Type: " << p2 -> phones(i).type() << endl;
         cout << "Phone: " << p2  -> phones(i).number() << endl;
     }
-
+    
     close(sock);
 }

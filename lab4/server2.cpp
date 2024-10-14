@@ -19,12 +19,12 @@ int main() {
         return 1;
     }
 
-    while(true) {
-
-        if(listen(passiveSock, 10) < 0) {
+     if(listen(passiveSock, 10) < 0) {
             cerr << "listen() failed: " << strerror(errno) << endl;
             return 1;
         }
+
+    while(true) {
 
         memset(&sin, 0, sizeof(sin));
         unsigned int sin_len = sizeof(sin);
