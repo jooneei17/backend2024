@@ -19,13 +19,16 @@ int main() {
         return 1;
     }
 
-     if(listen(passiveSock, 10) < 0) {
-            cerr << "listen() failed: " << strerror(errno) << endl;
-            return 1;
-        }
+    // 연결을 맺기 위해 대기중인 passive socket.
+    // 상대가 연결 요청을 해왔는데, 아직 완료 안된 것들을 몇 개까지 기억하고 있을지
+    // 그 이상의 연결 요청은 자동으로 거절.
+    // 이를 통해 여러 클라이언트의 동시 연결 요청 관리 가능
+    if(listen(passiveSock, 10) < 0) {
+        cerr << "listen() failed: " << strerror(errno) << endl;
+        return 1;
+    }
 
     while(true) {
-
         memset(&sin, 0, sizeof(sin));
         unsigned int sin_len = sizeof(sin);
         int clientSock = accept(passiveSock, (struct sockaddr *) &sin, &sin_len);
@@ -44,6 +47,7 @@ int main() {
             cout << "Received: " << numRecv << "bytes, clientSock" << clientSock << endl;
         }
 
+        // send 할 때에도 쪼개서 보내는 것이 안전함. (최대 크기를 벗어나면 전송 시 오류 발생할 수 있음)
         int offset = 0;
         while(offset < numRecv) {
             int numSend = send(clientSock, buf + offset, numRecv - offset, 0);
