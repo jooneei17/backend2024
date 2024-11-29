@@ -23,6 +23,13 @@ redis_client = redis.StrictRedis(
     decode_responses = True
 )
 
+try:
+    redis_client.ping()
+    print("Redis 연결 성공")
+except redis.ConnectionError:
+    print("Redis 연결 실패")
+
+
 @app.route('/')
 def home():
     # HTTP 세션 쿠키를 통해 이전에 로그인 한 적이 있는지를 확인한다.
@@ -38,10 +45,13 @@ def home():
     #       userId 로부터 DB 에서 사용자 이름을 얻어오는 코드를 여기에 작성해야 함
 
     if user_id:
+        print(f"user_id: {user_id}")
         try:
             real_user_id = redis_client.get(f"session:{user_id}")
+            print(f"real_user_id: {real_user_id}")
             if real_user_id:
                 name = redis_client.get(real_user_id)
+                print(f"name: {name}")
         except redis.RedisError as e:
             print(f"Redis 에러 발생: {e}")
 
@@ -103,19 +113,29 @@ def onOAuthAuthorizationCodeRedirected():
         abort(400, "Failed to get access token")
 
     access_token = token_response.json().get('access_token')
-   
+    print(f"access_token: {access_token}")
     # 3. 얻어낸 access token 을 이용해서 프로필 정보를 반환하는 API 를 호출하고,
     #    유저의 고유 식별 번호를 얻어낸다.
     profile_url = "https://openapi.naver.com/v1/nid/me"
     headers = {"Authorization": f"Bearer {access_token}"}
+
 
     profile_response = requests.get(profile_url, headers=headers)
     if profile_response.status_code != 200:
         abort(400, "Failed to get user profile")
 
     profile_data = profile_response.json()
+    
+    # 사용자 정보를 Redis에 저장
     user_id = profile_data['response'].get('id')
     user_name = profile_data['response'].get('name')
+    print(f"user_id: {user_id}")
+    print(f"user_name: {user_name}")
+
+
+    # 세션 ID와 사용자 이름을 Redis에 저장
+    redis_client.set(f"session:{user_id}", user_id)
+    redis_client.set(user_id, user_name)
 
 
     # 4. 얻어낸 user id 와 name 을 DB 에 저장한다.
